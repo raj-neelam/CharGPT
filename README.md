@@ -12,6 +12,20 @@ Whether you provide it with Shakespearean plays, Python code, or a collection of
 - **Style Mimicry:** effectively captures and reproduces the style of the training corpus.
 - **Customizable Architecture:** Supports various configurations for embedding dimensions, layers, and heads.
 
+## Web Interface
+
+![Config Page](./website/images/config_w.png) | ![Train Page](./website/images/train_w.png)
+:---:|:---:
+*Configuration Page* | *Training Page*
+
+**CharacterGPT** comes with a fully self-contained, browser-based web application that allows you to train and run the model entirely locally in your browser using TensorFlow.js. 
+
+### How to Use the Web App
+1. **Load Data**: Open the configuration page and either load the default dataset (e.g., Harry Potter) or upload your own plain `.txt` file.
+2. **Configure Model**: Set your desired hyperparameters such as embedding dimension, number of layers, attention heads, context length, and dropout rate.
+3. **Train & Monitor**: Switch to the Training page to compile the model. You can adjust training hyperparameters (Epochs, Batch Size, Learning Rate schedule) and track live training loss and sample text generation directly from the UI.
+4. **Inference**: Once the model is sufficiently trained, use the Inference panel to type a prompt and watch the model autocomplete your text in real-time with context-window highlighting.
+
 ## Model Architecture
 
 | Description | Architecture Diagram |

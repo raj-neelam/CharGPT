@@ -564,6 +564,7 @@ function setupInferencPanel() {
     const sendBtn = document.getElementById('infer-send');
     const stopBtn = document.getElementById('infer-stop');
     const moreBtn = document.getElementById('infer-more');
+    const clearBtn = document.getElementById('infer-clear');
     const display = document.getElementById('infer-display');
 
     if (!ta || !sendBtn) return;
@@ -574,6 +575,12 @@ function setupInferencPanel() {
     sendBtn.addEventListener('click', runInference);
     if (stopBtn) stopBtn.addEventListener('click', () => { state.inferStop = true; });
     if (moreBtn) moreBtn.addEventListener('click', runInferenceFurther);
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+        ta.value = '';
+        if (display) display.innerHTML = '';
+        state.inferGenerated = '';
+        if (moreBtn) moreBtn.disabled = true;
+    });
 }
 
 function updateContextHighlight(prompt, generated, display, isGenerating = false) {

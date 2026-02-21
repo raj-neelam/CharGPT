@@ -477,6 +477,10 @@
                             <input type="range" id="sl-infer-genlen" min="10" max="300" step="10" value="150" />
                             <span class="oval-val" id="sl-infer-genlen-val">150 chars</span>
                         </label>
+                        <button class="btn btn-outline btn-sm" id="infer-clear"
+                            style="margin-left:auto; padding:4px 8px; font-size:11px;">
+                            Clear
+                        </button>
                     </div>
                     <div class="infer-input-row">
                         <textarea id="infer-input" class="infer-textarea"
@@ -581,21 +585,23 @@
                                     <span class="param-val" id="sl-genlen-val2" style="font-size:11px">200 chars</span>
                                 </div>
                                 <input type="range" id="sl-genlen" min="10" max="300" step="10" value="200">
+
+                                <div style="margin-top:5px;padding-top:10px;border-top:1px solid var(--c-border)">
+                                    <div class="param-label-row" style="margin-bottom:4px">
+                                        <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR Start</span>
+                                        <span class="param-val" id="sl-lr-start-val">0.003</span>
+                                    </div>
+                                    <input type="range" id="sl-lr-start" min="0.0001" max="0.01" step="0.0001"
+                                        value="0.003">
+                                    <div class="param-label-row" style="margin-top:6px;margin-bottom:4px">
+                                        <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR End</span>
+                                        <span class="param-val" id="sl-lr-end-val">0.0005</span>
+                                    </div>
+                                    <input type="range" id="sl-lr-end" min="0.00001" max="0.005" step="0.00001"
+                                        value="0.0005">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <!-- LR schedule sliders -->
-                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c-border)">
-                        <div class="param-label-row" style="margin-bottom:4px">
-                            <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR Start</span>
-                            <span class="param-val" id="sl-lr-start-val">0.003</span>
-                        </div>
-                        <input type="range" id="sl-lr-start" min="0.0001" max="0.01" step="0.0001" value="0.003">
-                        <div class="param-label-row" style="margin-top:6px;margin-bottom:4px">
-                            <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR End</span>
-                            <span class="param-val" id="sl-lr-end-val">0.0005</span>
-                        </div>
-                        <input type="range" id="sl-lr-end" min="0.00001" max="0.005" step="0.00001" value="0.0005">
                     </div>
                 </div>
 
