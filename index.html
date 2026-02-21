@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CharacterGPT — Browser Transformer Trainer</title>
+    <meta name="description" content="Train a GPT-style transformer entirely in your browser." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="./website/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+</head>
+
+<body>
+    <!-- SVG icon sprites (hidden, referenced via <use>) -->
+    <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+        <symbol id="ic-bolt" viewBox="0 0 20 20">
+            <path d="M11 2L4 12h6l-1 6 7-10h-6l1-6z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-doc" viewBox="0 0 20 20">
+            <rect x="4" y="2" width="9" height="3" rx="1" fill="currentColor" opacity=".4" />
+            <rect x="4" y="2" width="12" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <line x1="7" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.3" />
+            <line x1="7" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.3" />
+            <line x1="7" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.3" />
+        </symbol>
+        <symbol id="ic-brain" viewBox="0 0 20 20">
+            <path
+                d="M10 3C7 3 5 5 5 7.5c0 1 .4 1.9 1 2.5H5a2 2 0 000 4h.5A2.5 2.5 0 008 16.5V17h4v-.5a2.5 2.5 0 002.5-2.5H15a2 2 0 000-4h-1c.6-.6 1-1.5 1-2.5C15 5 13 3 10 3z"
+                fill="none" stroke="currentColor" stroke-width="1.4" />
+        </symbol>
+        <symbol id="ic-gear" viewBox="0 0 20 20">
+            <path d="M10 13a3 3 0 100-6 3 3 0 000 6z" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <path
+                d="M17.7 8.6l-1.4-.5a6 6 0 00-.4-.9l.7-1.3-1.9-1.9-1.3.7a6 6 0 00-.9-.4l-.5-1.4h-2.6l-.5 1.4a6 6 0 00-.9.4l-1.3-.7-1.9 1.9.7 1.3a6 6 0 00-.4.9l-1.4.5v2.6l1.4.5c.1.3.2.6.4.9l-.7 1.3 1.9 1.9 1.3-.7c.3.2.6.3.9.4l.5 1.4h2.6l.5-1.4c.3-.1.6-.2.9-.4l1.3.7 1.9-1.9-.7-1.3c.2-.3.3-.6.4-.9l1.4-.5z"
+                fill="none" stroke="currentColor" stroke-width="1.4" />
+        </symbol>
+        <symbol id="ic-upload" viewBox="0 0 20 20">
+            <path d="M10 2v10M6 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round" fill="none" />
+            <path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" fill="none" />
+        </symbol>
+        <symbol id="ic-book" viewBox="0 0 20 20">
+            <path d="M3 4a1 1 0 011-1h5c1 0 1 .5 1 1v12c0-1-1-1.5-1-1.5H4a1 1 0 01-1-1V4z" fill="none"
+                stroke="currentColor" stroke-width="1.4" />
+            <path d="M10 4a1 1 0 011-1h5a1 1 0 011 1v11a1 1 0 01-1 1h-5s-1 .5-1 1.5V4z" fill="none"
+                stroke="currentColor" stroke-width="1.4" />
+        </symbol>
+        <symbol id="ic-sun" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <line x1="10" y1="2" x2="10" y2="4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <line x1="10" y1="16" x2="10" y2="18" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <line x1="2" y1="10" x2="4" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <line x1="16" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <line x1="4.2" y1="4.2" x2="5.6" y2="5.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <line x1="14.4" y1="14.4" x2="15.8" y2="15.8" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" />
+            <line x1="14.4" y1="5.6" x2="15.8" y2="4.2" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" />
+            <line x1="4.2" y1="15.8" x2="5.6" y2="14.4" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-moon" viewBox="0 0 20 20">
+            <!-- Proper crescent moon -->
+            <path d="M14.4 14.4A7 7 0 016.5 4.1a7 7 0 000 11.8 7 7 0 007.9-1.5z" fill="currentColor" opacity="0.9" />
+        </symbol>
+        <symbol id="ic-play" viewBox="0 0 20 20">
+            <polygon points="5,3 17,10 5,17" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-stop" viewBox="0 0 20 20">
+            <rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-chart" viewBox="0 0 20 20">
+            <polyline points="2,15 7,9 11,12 16,5" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round" />
+            <line x1="2" y1="18" x2="18" y2="18" stroke="currentColor" stroke-width="1.4" />
+        </symbol>
+        <symbol id="ic-table" viewBox="0 0 20 20">
+            <rect x="2" y="3" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2" />
+            <line x1="2" y1="13" x2="18" y2="13" stroke="currentColor" stroke-width="1.2" />
+            <line x1="9" y1="3" x2="9" y2="17" stroke="currentColor" stroke-width="1.2" />
+        </symbol>
+        <symbol id="ic-arch" viewBox="0 0 20 20">
+            <rect x="2" y="13" width="4" height="4" rx="1" fill="currentColor" opacity=".5" />
+            <rect x="8" y="8" width="4" height="9" rx="1" fill="currentColor" opacity=".7" />
+            <rect x="14" y="3" width="4" height="14" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-pen" viewBox="0 0 20 20">
+            <path d="M14 3l3 3-9 9H5v-3l9-9z" fill="none" stroke="currentColor" stroke-width="1.4"
+                stroke-linejoin="round" />
+            <line x1="11" y1="6" x2="14" y2="9" stroke="currentColor" stroke-width="1.2" />
+        </symbol>
+        <symbol id="ic-info" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.3" /><text x="10" y="14.5"
+                text-anchor="middle" font-size="10" font-weight="700" font-family="serif" fill="currentColor">i</text>
+        </symbol>
+        <symbol id="ic-chip" viewBox="0 0 20 20">
+            <rect x="5" y="5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <rect x="7.5" y="7.5" width="5" height="5" rx="1" fill="currentColor" opacity=".5" />
+            <line x1="8" y1="2" x2="8" y2="5" stroke="currentColor" stroke-width="1.3" />
+            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.3" />
+            <line x1="8" y1="15" x2="8" y2="18" stroke="currentColor" stroke-width="1.3" />
+            <line x1="12" y1="15" x2="12" y2="18" stroke="currentColor" stroke-width="1.3" />
+            <line x1="2" y1="8" x2="5" y2="8" stroke="currentColor" stroke-width="1.3" />
+            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.3" />
+            <line x1="15" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.3" />
+            <line x1="15" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="1.3" />
+        </symbol>
+    </svg>
+
+    <div class="app">
+
+        <!-- ══════════════════════════════════════════
+       NAVBAR
+  ══════════════════════════════════════════ -->
+        <nav class="navbar">
+            <span class="navbar-logo">
+                <svg class="ic" width="16" height="16">
+                    <use href="#ic-bolt" />
+                </svg>
+                CharacterGPT Trainer
+            </span>
+            <div class="nav-divider"></div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-page="configure">
+                    <svg class="ic" width="14" height="14">
+                        <use href="#ic-gear" />
+                    </svg> Configure
+                </button>
+                <button class="nav-tab" data-page="train">
+                    <svg class="ic" width="14" height="14">
+                        <use href="#ic-play" />
+                    </svg> Train
+                </button>
+            </div>
+            <div class="navbar-right">
+                <div class="model-badge" id="model-badge">
+                    <span class="dot"></span>
+                    <span>No model</span>
+                </div>
+                <button class="theme-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+                    <svg class="ic" width="16" height="16" id="theme-icon">
+                        <use href="#ic-sun" />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ══════════════════════════════════════════
+       PAGE 1 — CONFIGURE
+  ══════════════════════════════════════════ -->
+        <div class="page active" id="page-configure">
+
+            <!-- Left: Config Panel -->
+            <div class="config-left">
+
+                <!-- SECTION: Data -->
+                <div class="config-section open" id="cs-data">
+                    <div class="config-section-header">
+                        <div class="section-icon"><svg class="ic" width="15" height="15">
+                                <use href="#ic-doc" />
+                            </svg></div>
+                        <div class="section-hdr-text">
+                            <div class="section-hdr-title">Data Configuration</div>
+                            <div class="section-hdr-sub">Load and edit your training text</div>
+                        </div>
+                        <span class="section-chevron">›</span>
+                    </div>
+                    <div class="config-section-body">
+                        <div class="data-toolbar">
+                            <button class="btn btn-outline btn-sm" id="btn-load-hp">
+                                <svg class="ic" width="13" height="13">
+                                    <use href="#ic-book" />
+                                </svg> Load Harry Potter
+                            </button>
+                            <label class="file-label" title="Supports .txt .csv .json .pdf">
+                                <svg class="ic" width="13" height="13">
+                                    <use href="#ic-upload" />
+                                </svg> Upload file
+                                <input type="file" id="file-input" accept=".txt,.csv,.json,.pdf" />
+                            </label>
+                            <span class="data-stat" id="data-char-count">No data</span>
+                            <span id="data-size-warn" style="font-size:11px;color:var(--c-orange)"></span>
+                        </div>
+
+                        <textarea id="training-textarea" class="data-textarea"
+                            placeholder="Paste text here, or use the buttons above to load data.&#10;Supported file types: .txt  .csv  .json  .pdf&#10;You can also drag-and-drop a file onto this area."
+                            spellcheck="false"></textarea>
+
+                        <!-- Data range selector -->
+                        <div class="data-range-row" id="data-range-row" style="display:none">
+                            <div class="param-label-row" style="margin-bottom:4px">
+                                <span class="param-label">Loaded Region
+                                    <span class="tooltip-wrap"
+                                        data-tooltip="Slide to pick which portion of the loaded file is used for training. Useful for experimenting with different parts of a large text.">
+                                        <svg class="ic ic-info" width="12" height="12">
+                                            <use href="#ic-info" />
+                                        </svg>
+                                    </span>
+                                </span>
+                                <span style="font-size:11px;color:var(--c-dim)">
+                                    <span id="sl-data-start-val">0%</span> – <span id="sl-data-end-val">100%</span>
+                                </span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px">
+                                <div>
+                                    <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+                                        <span class="param-hint">Start</span>
+                                        <span id="sl-data-start-val" style="font-size:10px;color:var(--c-dim)">0%</span>
+                                    </div>
+                                    <input type="range" id="sl-data-start" min="0" max="95" step="5" value="0"
+                                        style="width:100%">
+                                </div>
+                                <div>
+                                    <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+                                        <span class="param-hint">End</span>
+                                        <span id="sl-data-end-val" style="font-size:10px;color:var(--c-dim)">100%</span>
+                                    </div>
+                                    <input type="range" id="sl-data-end" min="5" max="100" step="5" value="100"
+                                        style="width:100%">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="font-size:10px;color:var(--c-dim);margin-top:5px" id="data-load-status">
+                            No data loaded
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Model -->
+                <div class="config-section open" id="cs-model">
+                    <div class="config-section-header">
+                        <div class="section-icon"><svg class="ic" width="15" height="15">
+                                <use href="#ic-chip" />
+                            </svg></div>
+                        <div class="section-hdr-text">
+                            <div class="section-hdr-title">Model Configuration</div>
+                            <div class="section-hdr-sub">Transformer hyperparameters</div>
+                        </div>
+                        <span class="section-chevron">›</span>
+                    </div>
+                    <div class="config-section-body">
+
+                        <!-- Complexity bar -->
+                        <div class="complexity-bar-wrap">
+                            <div class="complexity-bar-labels">
+                                <span style="font-size:12px;font-weight:600;color:var(--c-text)">Computational
+                                    Cost</span>
+                                <span style="font-size:12px;font-family:var(--mono);color:var(--c-muted)"
+                                    id="complexity-score">—</span>
+                            </div>
+                            <div class="complexity-track">
+                                <div id="complexity-fill"></div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-top:5px">
+                                <span id="complexity-label"></span>
+                                <span id="param-count-inline"
+                                    style="font-family:var(--mono);font-size:11px;color:var(--c-dim)"></span>
+                            </div>
+                        </div>
+
+                        <div class="param-grid">
+
+                            <!-- Context Length -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        Context Length
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="How many characters the model can 'see' at once. Longer context = richer patterns but quadratically more compute. 128 is a good start.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-hint">chars model sees</span>
+                                </div>
+                                <select id="ctx-select">
+                                    <option value="32">32 tokens</option>
+                                    <option value="64">64 tokens</option>
+                                    <option value="128" selected>128 tokens</option>
+                                    <option value="256">256 tokens</option>
+                                    <option value="512">512 tokens</option>
+                                </select>
+                            </div>
+
+                            <!-- Embedding Dim -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        Embedding Dim
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="The dimensionality of token and position vectors. Must be divisible by Num Heads. Larger = richer representations, slower training.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-hint">width of vectors</span>
+                                </div>
+                                <select id="emb-select">
+                                    <option value="16">16 dims</option>
+                                    <option value="32">32 dims</option>
+                                    <option value="64" selected>64 dims</option>
+                                    <option value="128">128 dims</option>
+                                    <option value="256">256 dims</option>
+                                </select>
+                            </div>
+
+                            <!-- Num Layers -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        Num Layers
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="Number of stacked decoder blocks. More layers = deeper understanding, but each layer adds significant cost. Start with 2.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-val" id="sl-layers-val">2 layers</span>
+                                </div>
+                                <input type="range" id="sl-layers" min="1" max="8" step="1" value="2" />
+                                <div class="param-hint">stack depth — cost increases linearly</div>
+                            </div>
+
+                            <!-- Num Heads -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        Num Heads
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="Number of parallel attention heads. Must divide evenly into Embedding Dim (head_dim = embDim / heads). More heads = diverse attention patterns.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-val" id="sl-heads-val">4 heads</span>
+                                </div>
+                                <input type="range" id="sl-heads" min="1" max="8" step="1" value="4" />
+                                <div class="param-hint" id="heads-warn">head dim = 16</div>
+                            </div>
+
+                            <!-- FFN Multiple -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        FFN Multiple
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="The feed-forward network expands embDim by this factor then projects back down. Higher = more capacity per token, more compute. GPT-2 uses 4.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-val" id="sl-ffmul-val">×2</span>
+                                </div>
+                                <input type="range" id="sl-ffmul" min="1" max="4" step="1" value="2" />
+                                <div class="param-hint">embDim → embDim×k → embDim</div>
+                            </div>
+
+                            <!-- Dropout -->
+                            <div class="param-item">
+                                <div class="param-label-row">
+                                    <span class="param-label">
+                                        Dropout
+                                        <span class="tooltip-wrap"
+                                            data-tooltip="Fraction of neurons randomly zeroed during training. Acts as regularisation to prevent overfitting. 0 = off, 0.1–0.2 is typical.">
+                                            <svg class="ic ic-info" width="12" height="12">
+                                                <use href="#ic-info" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                    <span class="param-val" id="sl-dropout-val">0.1</span>
+                                </div>
+                                <input type="range" id="sl-dropout" min="0" max="0.5" step="0.05" value="0.1" />
+                                <div class="param-hint">regularisation — 0.1 is a good default</div>
+                            </div>
+
+                        </div><!-- /param-grid -->
+                    </div>
+                </div>
+
+            </div><!-- /config-left -->
+
+            <!-- Right: Architecture -->
+            <div class="config-right">
+                <div class="arch-header">
+                    <svg class="ic" width="14" height="14">
+                        <use href="#ic-arch" />
+                    </svg>
+                    Architecture Preview
+                </div>
+                <div id="arch-diagram-wrap">
+                    <div id="arch-diagram"></div>
+                </div>
+                <!-- Open Train button below arch preview -->
+                <div style="padding:14px 0 6px;display:flex;justify-content:flex-end;gap:8px;align-items:center">
+                    <span id="param-count-display"
+                        style="font-size:11px;font-family:var(--mono);color:var(--c-dim)"></span>
+                    <button class="btn btn-primary" id="btn-to-train"
+                        style="padding: 10px 22px; font-size:13px; font-weight:700;">
+                        <svg class="ic" width="14" height="14">
+                            <use href="#ic-play" />
+                        </svg>
+                        Open Train Page
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /page-configure -->
+
+        <!-- ══════════════════════════════════════════
+       PAGE 2 — TRAIN
+  ══════════════════════════════════════════ -->
+        <div class="page" id="page-train">
+
+            <!-- Center: output + inference -->
+            <div class="train-center">
+
+                <!-- Progress bars -->
+                <div class="train-top-bar">
+                    <div class="train-top-bar-row">
+                        <span class="epoch-label" id="epoch-label">Epoch — / —</span>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="epoch-progress-fill"></div>
+                        </div>
+                        <span class="progress-pct" id="epoch-pct">0%</span>
+                    </div>
+                    <div class="train-top-bar-row">
+                        <span class="epoch-label" style="color:var(--c-dim)">Batch</span>
+                        <div class="progress-track">
+                            <div class="progress-fill batch-fill" id="batch-progress-fill"></div>
+                        </div>
+                        <span class="progress-pct" id="batch-pct">0%</span>
+                    </div>
+                </div>
+
+                <!-- Sample cards -->
+                <div class="sample-cards-area" id="sample-cards-area">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <svg class="ic" width="32" height="32" style="opacity:.3">
+                                <use href="#ic-brain" />
+                            </svg>
+                        </div>
+                        <div>Press <strong>Build &amp; Train</strong> to start. Samples appear after each epoch.</div>
+                    </div>
+                </div>
+
+                <!-- Inference -->
+                <div class="inference-panel">
+                    <div class="inference-panel-header">
+                        <svg class="ic" width="14" height="14">
+                            <use href="#ic-pen" />
+                        </svg>
+                        Inference
+                        <span class="infer-hint">Type a prompt — the model autocompletes. Context window
+                            highlighted.</span>
+                    </div>
+                    <div class="infer-display" id="infer-display"></div>
+                    <div class="infer-options">
+                        <label>
+                            Generate:
+                            <input type="range" id="sl-infer-genlen" min="10" max="300" step="10" value="150" />
+                            <span class="oval-val" id="sl-infer-genlen-val">150 chars</span>
+                        </label>
+                    </div>
+                    <div class="infer-input-row">
+                        <textarea id="infer-input" class="infer-textarea"
+                            placeholder='Type a prompt e.g. "Harry looked at"…  (Enter to generate)'
+                            rows="1"></textarea>
+                        <button class="btn btn-primary btn-sm" id="infer-send">
+                            <svg class="ic" width="13" height="13">
+                                <use href="#ic-play" />
+                            </svg> Generate
+                        </button>
+                        <button class="btn btn-success btn-sm" id="infer-more" disabled>
+                            <svg class="ic" width="13" height="13">
+                                <use href="#ic-play" />
+                            </svg> More
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="infer-stop" disabled>
+                            <svg class="ic" width="13" height="13">
+                                <use href="#ic-stop" />
+                            </svg> Stop
+                        </button>
+                    </div>
+                </div>
+
+            </div><!-- /train-center -->
+
+            <!-- Right Sidebar -->
+            <div class="train-sidebar">
+
+                <!-- Controls -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Controls</div>
+                    <div class="train-btn-stack">
+                        <button class="btn btn-primary btn-full" id="btn-train">
+                            <svg class="ic" width="14" height="14">
+                                <use href="#ic-play" />
+                            </svg> Build &amp; Train
+                        </button>
+                        <button class="btn btn-success btn-full" id="btn-further" style="display:none">
+                            <svg class="ic" width="14" height="14">
+                                <use href="#ic-play" />
+                            </svg> Train Further
+                        </button>
+                        <button class="btn btn-danger btn-full" id="btn-stop" disabled>
+                            <svg class="ic" width="14" height="14">
+                                <use href="#ic-stop" />
+                            </svg> Stop Training
+                        </button>
+                        <button class="btn btn-outline btn-sm btn-full" id="btn-to-configure">
+                            &#8592; Back to Configure
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live stats -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <svg class="ic" width="13" height="13">
+                            <use href="#ic-chart" />
+                        </svg> Live Stats
+                    </div>
+                    <div class="wma-display">
+                        <div class="wma-val" id="stat-wma">—</div>
+                        <div class="wma-sub">WMA Loss (50-batch)</div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <div class="stat-row">
+                            <span class="stat-key">Learning Rate</span>
+                            <span class="stat-val" id="stat-lr">—</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-key">Test Loss</span>
+                            <span class="stat-val" id="stat-test">—</span>
+                        </div>
+                    </div>
+                    <!-- Training params collapsible -->
+                    <div id="train-params-collapsible">
+                        <button id="train-params-toggle"
+                            style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;border-top:1px solid var(--c-border);padding:8px 0 4px;cursor:pointer;color:var(--c-muted);font-size:11px;font-weight:600;font-family:var(--font)">
+                            <span>Training Parameters</span>
+                            <span id="train-params-chevron"
+                                style="font-size:11px;transition:transform 0.2s">&#8964;</span>
+                        </button>
+                        <div id="train-params-body" style="padding-top:4px">
+                            <div style="display:flex;flex-direction:column;gap:5px">
+                                <div class="param-label-row">
+                                    <span style="font-size:11px;font-weight:600">Epochs</span>
+                                    <span class="param-val" id="sl-epochs-val2" style="font-size:11px">5</span>
+                                </div>
+                                <input type="range" id="sl-epochs" min="1" max="30" step="1" value="5">
+                                <div class="param-label-row" style="margin-top:4px">
+                                    <span style="font-size:11px;font-weight:600">Batch Size</span>
+                                    <span class="param-val" id="sl-batch-val2" style="font-size:11px">32</span>
+                                </div>
+                                <input type="range" id="sl-batch" min="4" max="64" step="4" value="32">
+                                <div class="param-label-row" style="margin-top:4px">
+                                    <span style="font-size:11px;font-weight:600">Temperature</span>
+                                    <span class="param-val" id="sl-temp-val2" style="font-size:11px">0.9</span>
+                                </div>
+                                <input type="range" id="sl-temp" min="0.3" max="2.0" step="0.1" value="0.9">
+                                <div class="param-label-row" style="margin-top:4px">
+                                    <span style="font-size:11px;font-weight:600">Sample Length</span>
+                                    <span class="param-val" id="sl-genlen-val2" style="font-size:11px">200 chars</span>
+                                </div>
+                                <input type="range" id="sl-genlen" min="10" max="300" step="10" value="200">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- LR schedule sliders -->
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c-border)">
+                        <div class="param-label-row" style="margin-bottom:4px">
+                            <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR Start</span>
+                            <span class="param-val" id="sl-lr-start-val">0.003</span>
+                        </div>
+                        <input type="range" id="sl-lr-start" min="0.0001" max="0.01" step="0.0001" value="0.003">
+                        <div class="param-label-row" style="margin-top:6px;margin-bottom:4px">
+                            <span style="font-size:11px;font-weight:600;color:var(--c-text)">LR End</span>
+                            <span class="param-val" id="sl-lr-end-val">0.0005</span>
+                        </div>
+                        <input type="range" id="sl-lr-end" min="0.00001" max="0.005" step="0.00001" value="0.0005">
+                    </div>
+                </div>
+
+                <!-- Loss chart -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <svg class="ic" width="13" height="13">
+                            <use href="#ic-chart" />
+                        </svg> Loss Curve
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="loss-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Epoch table -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <svg class="ic" width="13" height="13">
+                            <use href="#ic-table" />
+                        </svg> Epoch History
+                    </div>
+                    <table class="epoch-loss-table">
+                        <thead>
+                            <tr>
+                                <th>Epoch</th>
+                                <th>Test Loss</th>
+                            </tr>
+                        </thead>
+                        <tbody id="epoch-table-body">
+                            <tr>
+                                <td colspan="2" style="color:var(--c-dim)">No epochs yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div><!-- /train-sidebar -->
+
+        </div><!-- /page-train -->
+
+    </div><!-- /app -->
+
+    <div id="toast-area"></div>
+
+    <script src="./website/js/tokenizer.js"></script>
+    <script src="./website/js/transformer.js"></script>
+    <script src="./website/js/trainer.js"></script>
+    <script src="./website/js/architecture.js"></script>
+    <script src="./website/js/chart.js"></script>
+    <script src="./website/js/app.js"></script>
+</body>
+
+</html>

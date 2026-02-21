@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokenizer Playground</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --bg-tertiary: #e5e7eb;
+            --accent: #6b7280;
+            --accent-glow: rgba(107, 114, 128, 0.1);
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border: #d1d5db;
+            --panel-header-bg: #f9fafb;
+            --token-opacity: 0.3;
+            --hover-token-opacity: 0.5;
+            --invisible-token-bg: #000000;
+            --invisible-token-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d26;
+            --bg-tertiary: #242835;
+            --accent: #6b7280;
+            --accent-glow: rgba(107, 114, 128, 0.2);
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --border: #374151;
+            --panel-header-bg: #1a1d26;
+            --token-opacity: 0.4;
+            --hover-token-opacity: 0.6;
+            --invisible-token-bg: #ffffff;
+            --invisible-token-text: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .brand {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .brand span {
+            color: #3b82f6;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Select Styles */
+        .select-wrapper {
+            position: relative;
+        }
+
+        select {
+            appearance: none;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.4rem 2rem 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-family: inherit;
+            cursor: pointer;
+            font-size: 0.85rem;
+            outline: none;
+            min-width: 220px;
+            transition: border-color 0.2s, background-color 0.3s;
+        }
+
+        select:focus {
+            border-color: #3b82f6;
+        }
+
+        .select-icon {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-right: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.2;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .highlight-stat {
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            min-width: 0;
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--panel-header-bg);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        /* Input Area & Backdrop */
+        .input-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            /* Important for sync scroll */
+        }
+
+        .input-container textarea,
+        .input-container .backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            margin: 0;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            background: transparent;
+            overflow: auto;
+            /* Allow scrolling */
+            white-space: pre-wrap;
+            /* Preserve whitespace logic */
+            overflow-wrap: break-word;
+            /* Handle long words */
+        }
+
+        .input-container textarea {
+            z-index: 2;
+            /* In front */
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+        }
+
+        .input-container .backdrop {
+            z-index: 1;
+            /* Behind */
+            color: transparent;
+            /* Text invisible */
+            pointer-events: none;
+            /* Let clicks pass through to textarea */
+        }
+
+        .backdrop mark {
+            background-color: transparent;
+            color: transparent;
+            border-radius: 2px;
+            transition: background-color 0.1s;
+        }
+
+        .backdrop mark.active {
+            background-color: rgba(255, 255, 0, 0.4);
+            /* Highlight color */
+        }
+
+        [data-theme="dark"] .backdrop mark.active {
+            background-color: rgba(255, 255, 0, 0.25);
+        }
+
+        /* Output Area */
+        #output {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* Tokens */
+        .token {
+            display: inline-block;
+            border-radius: 3px;
+            padding: 0 1px;
+            cursor: default;
+            transition: opacity 0.15s, outline 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .token:hover {
+            opacity: 0.9 !important;
+            /* Force high opacity on hover */
+            outline: 2px solid var(--text-primary);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Token tooltip */
+        .token[data-id]:hover::after {
+            content: "ID: " attr(data-id);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111827;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            pointer-events: none;
+            margin-bottom: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        /* Newline Token Visualization */
+        .token-newline {
+            display: inline-block;
+            background-color: var(--invisible-token-bg) !important;
+            color: var(--invisible-token-text);
+            font-size: 0.7em;
+            padding: 0 4px;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 2px;
+        }
+
+        /* Invisible chars visualization (spaces) - optional visual aid */
+        .token-space::before {
+            content: '·';
+            opacity: 0.3;
+        }
+
+        /* Loading Overlay */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            display: none;
+            /* Flex when active */
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 5px;
+            border: 2px solid var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"></path>
+                <path d="M4 9h16"></path>
+                <path d="M4 14h16"></path>
+            </svg>
+            Tokenizer<span>Tester</span>
+        </div>
+
+        <div class="header-actions">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="vocab-size">-</span>
+                    <span class="stat-label">Vocab</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="encode-time">-</span>
+                    <span class="stat-label">Enc (ms)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="decode-time">-</span>
+                    <span class="stat-label">Dec (ms)</span>
+                </div>
+                <div class="stat-item highlight-stat">
+                    <span class="stat-value" id="total-tokens">0</span>
+                    <span class="stat-label">Tokens</span>
+                </div>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="tokenizer-select">
+                    <option value="" disabled selected>Loading...</option>
+                </select>
+                <div class="select-icon">▼</div>
+            </div>
+
+            <button class="theme-toggle" id="theme-btn" title="Toggle Theme">
+                <!-- Moon Icon (for Light Mode -> Go Dark) -->
+                <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="display:none;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <!-- Sun Icon (for Dark Mode -> Go Light) -->
+                <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="panel">
+            <div class="panel-header">Input Text</div>
+            <div class="input-container">
+                <div class="backdrop" id="backdrop"></div>
+                <textarea id="input-text" placeholder="Type or paste text here to tokenize..." autofocus>BASIC TEXT
+This is a simple paragraph to test a tokenizer. It contains punctuation, numbers (12345), decimals (3.14159), and mixed casing like CamelCase and snake_case. It also includes contractions like don't, can't, and it's.
+
+EMOJIS
+🙂😂🔥🚀👍🏽❤️✨
+Edge cases: emoji sequences 👨‍👩‍👧‍👦, flags 🇮🇳🇯🇵, skin tones 👍🏻👍🏿, and repeated emojis 😂😂😂😂
+
+PYTHON CODE
+
+```python
+import math
+
+def tokenize_test(x):
+    # Example function
+    if x <= 0:
+        return None
+    return math.log(x) * 1e-3
+
+print(tokenize_test(42))
+```
+
+MULTIPLE LANGUAGES
+Hindi: नमस्ते, आप कैसे हैं? यह एक परीक्षण वाक्य है।
+Japanese (Kanji + Kana): 日本語の文章をテストしています。東京は大きい都市です。
+Mandarin Chinese: 这是一个用于分词测试的句子。机器学习很有趣。
+Korean: 이것은 토크나이저를 테스트하기 위한 문장입니다.
+Arabic: هذا نص لاختبار تقسيم الكلمات.
+Russian: Это предложение для тестирования токенизации.
+Spanish: ¿Cómo estás? Este texto sirve para pruebas.
+
+EDGE CASES
+
+1. URLs and emails
+   [https://example.com/test?param=1&value=hello-world](https://example.com/test?param=1&value=hello-world)
+   [test.email+alias123@example-domain.co.in](mailto:test.email+alias123@example-domain.co.in)
+
+2. Numbers and formats
+   1,000,000
+   0xFFEE
+   1e10
+   ⅓ ½ ¾
+
+3. Whitespace variations
+   Word1    Word2
+   Word3\tWord4
+   Line with trailing spaces
+
+4. Repeated characters
+   looooooong
+   aaaaaaaaaaaaaaaaaaaa
+
+5. Special characters and symbols
+   ~!@#$%^&*()_+-={}[]|:;"'<>,.?/
+   §¶•°∞≠≈≤≥
+
+6. Unicode and combining characters
+   café naïve coöperate
+   Z͑͗͋̾͂͗͂̈́̈́͒́a̓̾͐͑͗͊̈́͗̚l̐͂͌̅̑͛͗̾́g̑̈́͒̿̇̾͊̍̕o̓͑̈́͂͑͌͗
+
+7. Mixed language in one sentence
+   I am learning मशीन लर्निंग while reading 日本語の本 and studying 한국어.
+
+8. JSON-like text
+   {"name": "Raj", "skills": ["ML", "DL", "RL"], "active": true, "score": 98.54}
+
+END OF TEST TEXT
+</textarea>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">Tokenized Output</div>
+            <div id="output"></div>
+        </div>
+    </main>
+
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const inputEl = document.getElementById('input-text');
+        const backdropEl = document.getElementById('backdrop');
+        const outputEl = document.getElementById('output');
+        const selectEl = document.getElementById('tokenizer-select');
+        const loader = document.getElementById('loader');
+
+        // Stats Elements
+        const vocabEl = document.getElementById('vocab-size');
+        const encTimeEl = document.getElementById('encode-time');
+        const decTimeEl = document.getElementById('decode-time');
+        const totalTokEl = document.getElementById('total-tokens');
+
+        // Theme Elements
+        const themeBtn = document.getElementById('theme-btn');
+        const htmlEl = document.documentElement;
+        const iconMoon = document.getElementById('icon-moon');
+        const iconSun = document.getElementById('icon-sun');
+
+        let lastData = null; // Store last tokenization data for hovering
+
+        // Theme Logic
+        function setTheme(theme) {
+            htmlEl.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                iconMoon.style.display = 'none';
+                iconSun.style.display = 'block';
+            } else {
+                iconMoon.style.display = 'block';
+                iconSun.style.display = 'none';
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        // Initialize Theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        themeBtn.addEventListener('click', () => {
+            const current = htmlEl.getAttribute('data-theme');
+            setTheme(current === 'light' ? 'dark' : 'light');
+        });
+
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Color generation
+        function getTokenColor(id) {
+            const hue = (id * 137.5) % 360;
+            // Use CSS variable for opacity to adjust per theme
+            const opacity = getComputedStyle(document.documentElement).getPropertyValue('--token-opacity').trim();
+            return `hsla(${hue}, 70%, 50%, ${opacity})`;
+        }
+
+        // Sync scroll
+        function handleScroll() {
+            backdropEl.scrollTop = inputEl.scrollTop;
+            backdropEl.scrollLeft = inputEl.scrollLeft;
+        }
+
+        async function loadTokenizers() {
+            try {
+                const res = await fetch('/api/tokenizers');
+                const tokenizers = await res.json();
+
+                selectEl.innerHTML = ''; // Clear loading
+
+                const customGroup = document.createElement('optgroup');
+                customGroup.label = "Custom Tokenizers";
+
+                const standardGroup = document.createElement('optgroup');
+                standardGroup.label = "Tiktoken (Standard)";
+
+                tokenizers.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    opt.textContent = t.name + (t.is_custom ? " (Custom)" : "");
+                    opt.dataset.vocab = t.vocab_size;
+
+                    if (t.is_custom) customGroup.appendChild(opt);
+                    else standardGroup.appendChild(opt);
+                });
+
+                selectEl.appendChild(customGroup);
+                selectEl.appendChild(standardGroup);
+
+                if (tokenizers.length > 0) {
+                    // Prefer non-custom (standard) as default if available
+                    const defaultTok = tokenizers.find(t => !t.is_custom)?.name || tokenizers[0].name;
+                    selectEl.value = defaultTok;
+                    updateTokenization();
+                }
+
+            } catch (err) {
+                console.error("Failed to load tokenizers", err);
+                selectEl.innerHTML = '<option disabled>Error loading</option>';
+            }
+        }
+
+        async function updateTokenization() {
+            const text = inputEl.value;
+            const tokenizerName = selectEl.value;
+            if (!tokenizerName) return;
+
+            try {
+                const res = await fetch('/api/tokenize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, tokenizer_name: tokenizerName })
+                });
+
+                const data = await res.json();
+                lastData = data;
+                renderTokens(data);
+                updateBackdrop(data);
+                updateStats(data);
+            } catch (err) {
+                console.error("Tokenization failed", err);
+            }
+        }
+
+        function updateStats(data) {
+            vocabEl.textContent = data.vocab_size.toLocaleString();
+            encTimeEl.textContent = data.encode_time_ms.toFixed(2);
+            decTimeEl.textContent = data.decode_time_ms.toFixed(2);
+            totalTokEl.textContent = data.total_tokens.toLocaleString();
+        }
+
+        function updateBackdrop(data) {
+            backdropEl.innerHTML = '';
+            // Reconstruct the text in spans
+            data.decoded_parts.forEach((part, index) => {
+                const mark = document.createElement('mark');
+                mark.textContent = part;
+                mark.dataset.index = index;
+                backdropEl.appendChild(mark);
+            });
+        }
+
+        function renderTokens(data) {
+            outputEl.innerHTML = '';
+
+            data.tokens.forEach((id, index) => {
+                const part = data.decoded_parts[index];
+                const span = document.createElement('span');
+                span.className = 'token';
+                span.dataset.id = id;
+                span.dataset.index = index; // For hover matching
+                span.style.backgroundColor = getTokenColor(id);
+
+                // Handle newlines
+                if (part === '\n' || part === '\r\n') {
+                    // Create a visible newline marker
+                    const nlMarker = document.createElement('span');
+                    nlMarker.className = 'token-newline';
+                    nlMarker.textContent = '\\n';
+                    span.appendChild(nlMarker);
+
+                    outputEl.appendChild(span);
+                    // Add actual break
+                    outputEl.appendChild(document.createElement('br'));
+                }
+                // Handle spaces (optional: could add specific class for logic, but just text is often fine if styled)
+                else if (part.trim() === '') {
+                    span.textContent = part; // Keep spaces
+                    span.classList.add('token-space');
+                    outputEl.appendChild(span);
+                }
+                else {
+                    span.textContent = part;
+                    outputEl.appendChild(span);
+                }
+
+                // Hover listeners
+                span.addEventListener('mouseenter', () => {
+                    const idx = span.dataset.index;
+                    const backdropMark = backdropEl.querySelector(`mark[data-index="${idx}"]`);
+                    if (backdropMark) backdropMark.classList.add('active');
+                });
+
+                span.addEventListener('mouseleave', () => {
+                    const idx = span.dataset.index;
+                    const backdropMark = backdropEl.querySelector(`mark[data-index="${idx}"]`);
+                    if (backdropMark) backdropMark.classList.remove('active');
+                });
+            });
+        }
+
+        // Event Listeners
+        inputEl.addEventListener('input', debounce(updateTokenization, 300));
+        inputEl.addEventListener('scroll', handleScroll);
+        selectEl.addEventListener('change', updateTokenization);
+
+        // Initial Load
+        loadTokenizers();
+
+    </script>
+</body>
+
+</html>
